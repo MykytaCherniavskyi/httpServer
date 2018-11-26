@@ -12,7 +12,8 @@ const data = {
     name: "Nikita",
     age: 20,
     pdf_profile: "/prof/file.pdf",
-    living: "Sumy"
+    living: "Sumy",
+    file_pdf: "./pharmacy.pdf"
 }
 
 for (const i in data) {

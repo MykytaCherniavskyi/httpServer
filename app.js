@@ -8,7 +8,17 @@ const PORT = 3000;
 const server = http.createServer((request, response) => {
     const { remoteAddress, remotePort } = response.socket;
     let parsebleUrl = request.url.split('/');
-    // console.log(parsebleUrl[2]);
+    const FILE_LOGS = path.resolve(__dirname, "logs.txt");
+
+    let writeFile = fs.createWriteStream(FILE_LOGS, {
+        flags: 'a'
+    });
+
+    writeFile.on('finish', () => console.log(`File ${path.basename(FILE_LOGS)} has been written`));
+
+    writeFile.write(`${new Date().toLocaleString()} - ${request.method} - ${request.url} - ${request.rawHeaders}\n`)
+
+    writeFile.end();
 
     switch(request.url) {
         case '/variables':
@@ -55,13 +65,38 @@ const server = http.createServer((request, response) => {
                 response.end(JSON.stringify(currentLine));
             });
             break;
+        case `/files/${parsebleUrl[2]}`:
+            console.log(`Requested ${request.method} ${request.url} from ${remoteAddress}:${remotePort}`);
+
+            let readFile3 = fs.createReadStream(FILE_ENV);
+            let currentLine2 = '';
+            let dataFileArr2 = [];
+
+            readFile3.on('data', data => {
+                let dataKey;
+                dataFileArr2 = data.toString('utf8');
+
+                let splitebleArr = dataFileArr2.split('\n');
+                splitebleArr.forEach(i => {
+                    if (i.match(parsebleUrl[2])) {
+                        currentLine2 += i;
+                    }
+                });
+                let [key,value] = currentLine2.split('=./');
+
+                let file = fs.createReadStream(`./${value}`).pipe(response);
+                let stat = fs.statSync(`./${value}`);
+                response.setHeader('Content-Length', stat.size);
+                response.setHeader('Content-Type', 'application/pdf');
+                response.setHeader('Content-Disposition', `attachment; filename=${value}`);
+                response.statusCode = 200;
+
+            });
+            break;
         default: 
             response.statusCode = 404;
             response.end('empty data');
     }
-    // response.setHeader('Content-Type', 'application/json');
-    // response.statusCode = 201;
-    // response.end(JSON.stringify({data: 'Hello world'}));
 });
 
 server.listen(PORT, err => {
@@ -71,3 +106,9 @@ server.listen(PORT, err => {
 
     console.log(`Server is running on port ${PORT}`);
 });
+
+TODO:
+//Не работает отлавливание сигнала о закрытие сервера
+// process.on('exit', (code) => {
+//     console.log('This will not run');
+// });
